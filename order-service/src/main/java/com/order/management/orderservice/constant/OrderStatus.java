@@ -1,4 +1,4 @@
-package com.order.management.orderservice.data;
+package com.order.management.orderservice.constant;
 
 public enum OrderStatus {
     CREATED,

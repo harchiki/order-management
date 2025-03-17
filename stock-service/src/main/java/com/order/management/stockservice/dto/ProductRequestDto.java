@@ -1,10 +1,8 @@
-package com.order.management.orderservice.dto.product;
+package com.order.management.stockservice.dto;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-
-import java.util.UUID;
 
 @NoArgsConstructor
 @Getter
