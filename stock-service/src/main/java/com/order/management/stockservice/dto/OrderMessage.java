@@ -14,6 +14,6 @@ import java.util.UUID;
 @NoArgsConstructor
 public class OrderMessage {
     private UUID orderId;
-    private Set<ProductRequestDto> cart;
+    private Set<ProductRequest> cart;
     private OrderStatus status;
 }
