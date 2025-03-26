@@ -13,9 +13,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitmqSchemaConfig {
 	@Bean
-	Declarables createValidationSchema(@Value("${order.validation.stock.queue}") String stockQueueName,
-									   @Value("${order.validation.discount.queue}") String discountQueueName,
-									   @Value("${order.validation.exchange}") String validationExchange) {
+	Declarables createValidationSchema(@Value("${order.validation.stock.queue:q.stock.validation}") String stockQueueName,
+									   @Value("${order.validation.discount.queue:q.discount.validation}") String discountQueueName,
+									   @Value("${order.validation.exchange:x.order.validation}") String validationExchange) {
 		FanoutExchange fanoutExchange = new FanoutExchange(validationExchange, true,
 				false, null);
 
@@ -29,8 +29,8 @@ public class RabbitmqSchemaConfig {
 	}
 
 	@Bean
-	Declarables createValidationResponseSchema(@Value("${order.validation.response.queue}") String stockQueueName,
-											   @Value("${order.validation.response.exchange}") String validationExchange) {
+	Declarables createValidationResponseSchema(@Value("${order.validation.response.queue:q.validation.response}") String stockQueueName,
+											   @Value("${order.validation.response.exchange:x.validation.response}") String validationExchange) {
 		FanoutExchange fanoutExchange = new FanoutExchange(validationExchange, true,
 				false, null);
 

@@ -21,7 +21,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderMapper orderMapper;
     private final ObjectMapper objectMapper;
 
-    @Value("${order.validation.exchange}")
+    @Value("${order.validation.exchange:x.order.validation}")
     private String orderValidationExchange;
 
     @Override

@@ -22,7 +22,7 @@ public class StockValidationServiceImpl implements StockValidationService {
     private final ProductRepository productRepository;
     private final RabbitTemplate rabbitTemplate;
 
-    @Value("${order.validation.response.exchange}")
+    @Value("${order.validation.response.exchange:x.validation.response}")
     private String validationResponseExchange;
 
     @Override
