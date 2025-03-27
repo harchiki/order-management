@@ -29,8 +29,8 @@ public class RabbitmqSchemaConfig {
 	}
 
 	@Bean
-	Declarables createValidationResponseSchema(@Value("${order.validation.response.queue:q.validation.response}") String stockQueueName,
-											   @Value("${order.validation.response.exchange:x.validation.response}") String validationExchange) {
+	Declarables createValidationResponseSchema(@Value("${order.validation.response.queue}") String stockQueueName,
+											   @Value("${order.validation.response.exchange}") String validationExchange) {
 		FanoutExchange fanoutExchange = new FanoutExchange(validationExchange, true,
 				false, null);
 
