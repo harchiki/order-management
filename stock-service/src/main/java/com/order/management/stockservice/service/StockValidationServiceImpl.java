@@ -22,11 +22,11 @@ public class StockValidationServiceImpl implements StockValidationService {
     private final ProductRepository productRepository;
     private final RabbitTemplate rabbitTemplate;
 
-    @Value("${order.validation.response.exchange:x.validation.response}")
+    @Value("${order.validation.response.exchange}")
     private String validationResponseExchange;
 
     @Override
-    @RabbitListener(queues = "q.stock.validation")
+    @RabbitListener(queues = "${order.validation.stock.queue}")
     public void consumeOrder(OrderMessage order) {
         boolean isAllStockEnough = order.getCart().stream().allMatch(this::isStockEnough);
         StockValidationResult result = new StockValidationResult();
