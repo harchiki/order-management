@@ -1,8 +1,6 @@
 package com.order.management.orderservice.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.order.management.orderservice.constant.OrderStatus;
+import com.order.management.common.constant.OrderStatus;
 import com.order.management.orderservice.dto.order.OrderMessage;
 import com.order.management.orderservice.dto.order.OrderRequestDto;
 import com.order.management.orderservice.mapper.OrderMapper;
@@ -19,7 +17,6 @@ import org.springframework.stereotype.Service;
 public class OrderServiceImpl implements OrderService {
     private final RabbitTemplate rabbitTemplate;
     private final OrderMapper orderMapper;
-    private final ObjectMapper objectMapper;
 
     @Value("${order.validation.exchange}")
     private String orderValidationExchange;

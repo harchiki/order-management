@@ -1,7 +1,7 @@
 package com.order.management.stockservice.dto;
 
-import com.order.management.stockservice.constant.ValidationStatus;
-import com.order.management.stockservice.constant.ValidationType;
+import com.order.management.common.constant.ValidationStatus;
+import com.order.management.common.constant.ValidationType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

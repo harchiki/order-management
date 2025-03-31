@@ -1,7 +1,7 @@
 package com.order.management.stockservice.service;
 
-import com.order.management.stockservice.constant.ValidationStatus;
-import com.order.management.stockservice.constant.ValidationType;
+import com.order.management.common.constant.ValidationStatus;
+import com.order.management.common.constant.ValidationType;
 import com.order.management.stockservice.dto.OrderMessage;
 import com.order.management.stockservice.dto.ProductRequest;
 import com.order.management.stockservice.dto.StockValidationResult;
