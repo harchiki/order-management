@@ -8,6 +8,7 @@ import com.order.management.stockservice.dto.StockValidationResult;
 import com.order.management.stockservice.model.Product;
 import com.order.management.stockservice.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor(onConstructor_ = @__(@Autowired))
 public class StockValidationServiceImpl implements StockValidationService {
@@ -28,6 +30,7 @@ public class StockValidationServiceImpl implements StockValidationService {
     @Override
     @RabbitListener(queues = "${order.validation.stock.queue}")
     public void consumeOrder(OrderMessage order) {
+        log.info("Consuming OrderMessage : [{}]", order);
         boolean isAllStockEnough = order.getCart().stream().allMatch(this::isStockEnough);
         StockValidationResult result = new StockValidationResult();
         result.setOrderId(order.getOrderId());
