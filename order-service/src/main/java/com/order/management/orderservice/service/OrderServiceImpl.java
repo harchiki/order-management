@@ -25,7 +25,7 @@ public class OrderServiceImpl implements OrderService {
     private String orderValidationExchange;
 
     @Override
-    public OrderMessage producePayment(OrderRequestDto orderDto) throws JsonProcessingException {
+    public OrderMessage producePayment(OrderRequestDto orderDto) {
         OrderMessage orderMessage = orderMapper.orderRequestDtoToOrder(orderDto);
         orderMessage.setStatus(OrderStatus.CREATED);
 

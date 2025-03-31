@@ -14,6 +14,7 @@ public class OrderMessage {
     private UUID orderId;
     private Set<Product> cart;
     private OrderStatus status;
+    private String discountCode;
 
     public OrderMessage() {
         this.orderId = UUID.randomUUID();
