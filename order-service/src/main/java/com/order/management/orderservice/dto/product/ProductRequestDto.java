@@ -11,6 +11,5 @@ import java.util.UUID;
 @Setter
 public class ProductRequestDto {
     private Long productId;
-    private String name;
     private long quantity;
 }
