@@ -45,7 +45,7 @@ public class DiscountValidationServiceImpl implements DiscountValidationService{
     private ValidationStatus verifyDiscountIfExist(String discountCode) {
         if (StringUtils.isBlank(discountCode)) {
             log.info("No discountCode");
-            return ValidationStatus.NO_CODE;
+            return ValidationStatus.OKAY;
         }
         Optional<DiscountCode> optDiscount = DiscountCode.findByDiscountCode(discountCode);
         if (optDiscount.isEmpty()) {

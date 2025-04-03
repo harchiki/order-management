@@ -20,7 +20,7 @@ public class OrderController {
 
     @PostMapping("/payment")
     public ResponseEntity<OrderMessage> paymentProcess(@RequestBody OrderRequestDto orderRequestDto) throws JsonProcessingException {
-        OrderMessage orderMessage = orderService.producePayment(orderRequestDto);
+        OrderMessage orderMessage = orderService.validateOrder(orderRequestDto);
         return ResponseEntity.ok(orderMessage);
     }
 }
