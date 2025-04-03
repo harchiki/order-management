@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.order.management</groupId>
-	<artifactId>stock-service</artifactId>
+	<artifactId>product-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>stock-service</name>
 	<description>Checks product stock availability</description>
