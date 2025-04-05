@@ -1,7 +1,6 @@
 package com.order.management.orderservice.dto.validation;
 
-import com.order.management.common.constant.ValidationStatus;
-import com.order.management.common.constant.ValidationType;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,10 +10,10 @@ import java.util.UUID;
 
 @Data
 @NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
-public class ValidationResultDto {
+public class RejectedOrder {
     private UUID orderId;
-    private ValidationStatus stockStatus;
-    private ValidationStatus discountStatus;
+    private String reason;
 }

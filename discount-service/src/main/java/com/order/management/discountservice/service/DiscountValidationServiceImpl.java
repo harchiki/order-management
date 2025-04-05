@@ -34,10 +34,9 @@ public class DiscountValidationServiceImpl implements DiscountValidationService{
 
         DiscountValidationResult result = new DiscountValidationResult();
         result.setOrderId(order.getOrderId());
-        result.setValidationType(ValidationType.DISCOUNT_CODE);
 
         ValidationStatus status = verifyDiscountIfExist(order.getDiscountCode());
-        result.setStatus(status);
+        result.setDiscountStatus(status);
 
         rabbitTemplate.convertAndSend(validationResponseExchange, "", result);
     }

@@ -34,9 +34,8 @@ public class StockValidationServiceImpl implements StockValidationService {
         boolean isAllStockEnough = order.getCart().stream().allMatch(this::isStockEnough);
         StockValidationResult result = new StockValidationResult();
         result.setOrderId(order.getOrderId());
-        result.setValidationType(ValidationType.STOCK);
         ValidationStatus status = isAllStockEnough ? ValidationStatus.OKAY : ValidationStatus.REJECTED;
-        result.setStatus(status);
+        result.setStockStatus(status);
 
         rabbitTemplate.convertAndSend(validationResponseExchange, "", result);
     }
