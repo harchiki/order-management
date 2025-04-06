@@ -108,6 +108,11 @@ public class OrderServiceImpl implements OrderService {
             return;
         }
 
+        // todo it need to be solved
+        // even if consumed validation successfully,
+        // however previous message is still left in waiting queue
+        // and it s still going into rejected queue
+        // maybe a flag for waiting would be easy solution
         if (Optional.ofNullable(result.getDiscountStatus()).isEmpty()
                 || Optional.ofNullable(result.getStockStatus()).isEmpty()) {
             validationCacheTemplate.opsForValue().set(validationCacheKey, result, Duration.ofMinutes(1));
