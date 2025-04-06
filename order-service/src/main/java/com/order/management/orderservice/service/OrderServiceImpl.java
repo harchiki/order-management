@@ -1,5 +1,7 @@
 package com.order.management.orderservice.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.order.management.common.constant.OrderStatus;
 import com.order.management.common.constant.ValidationStatus;
 import com.order.management.common.constant.ValidationType;
@@ -8,22 +10,28 @@ import com.order.management.orderservice.dto.order.OrderRequestDto;
 import com.order.management.orderservice.dto.validation.RejectedOrder;
 import com.order.management.orderservice.dto.validation.ValidationResult;
 import com.order.management.orderservice.dto.validation.ValidationResultDto;
+import com.order.management.orderservice.helper.rabbitmq.UnprocessableMessageHandler;
 import com.order.management.orderservice.mapper.OrderMapper;
 
 import com.order.management.orderservice.model.Order;
 import com.order.management.orderservice.repository.OrderRepository;
 import com.order.management.orderservice.util.CacheUtil;
+import com.rabbitmq.client.Channel;
 import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -35,18 +43,21 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class OrderServiceImpl implements OrderService {
     private final RabbitTemplate rabbitTemplate;
+    private final ObjectMapper objectMapper;
     private final OrderMapper orderMapper;
     private final OrderRepository orderRepository;
     // key order id
     private final RedisTemplate<String, ValidationResult> validationCacheTemplate;
     private final RedisTemplate<String, RejectedOrder> rejectedOrderCacheTemplate;
 
+    @Value("${order.validation.response.dlx}")
+    private String rejectedOrderExchange;
 
     @Value("${order.validation.exchange}")
     private String orderValidationExchange;
 
     @Override
-    public OrderMessage validateOrder(OrderRequestDto orderDto) {
+    public OrderMessage validateOrder(OrderRequestDto orderDto) throws JsonProcessingException {
         Order order = new Order();
         orderMapper.orderRequestDtoToOrder(order, orderDto);
         order.setStatus(OrderStatus.CREATED);
@@ -57,9 +68,11 @@ public class OrderServiceImpl implements OrderService {
         return orderMessage;
     }
 
-    @RabbitListener(queues = "${order.validation.response.queue}")
+    @RabbitListener(queues = "${order.validation.response.queue}", containerFactory = "customRabbitListener")
     @Override
-    public void consumeValidation(ValidationResultDto validationResultDto) {
+    public void consumeValidation(Message message, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws IOException {
+        ValidationResultDto validationResultDto = objectMapper.readValue(message.getBody(), ValidationResultDto.class);
+
         log.info("Consuming validation result : {}", validationResultDto);
         UUID orderId = validationResultDto.getOrderId();
         final String validationCacheKey = CacheUtil.getCacheKey(CacheUtil.VALIDATION_CACHE_ORDER_KEY, orderId);
@@ -68,7 +81,7 @@ public class OrderServiceImpl implements OrderService {
 
         if (isAlreadyRejected) {
             log.debug("Order is already rejected, orderId : {}", orderId);
-            // todo throw exception without retry
+            channel.basicAck(deliveryTag, false);
             return;
         }
 
@@ -85,22 +98,29 @@ public class OrderServiceImpl implements OrderService {
                 .ifPresent(result::setDiscountStatus);
 
         // check results if any rejected
-        if (isAnyRejected(result)) {
+        if (isRejected(result)) {
             log.info("Order is just rejected, orderId : [{}]", result);
             RejectedOrder rejectedOrder = new RejectedOrder(orderId, getRejectionReason(result));
             rejectedOrderCacheTemplate.opsForValue()
                     .set(CacheUtil.getCacheKey(CacheUtil.REJECTED_ORDER_CACHE_KEY, orderId), rejectedOrder, Duration.ofMinutes(1));
-            // todo throw exception and send it rejected order queue
+            channel.basicAck(deliveryTag, false);
+            rabbitTemplate.convertAndSend(rejectedOrderExchange, "",rejectedOrder);
+            return;
         }
 
         if (Optional.ofNullable(result.getDiscountStatus()).isEmpty()
                 || Optional.ofNullable(result.getStockStatus()).isEmpty()) {
             validationCacheTemplate.opsForValue().set(validationCacheKey, result, Duration.ofMinutes(1));
             log.info("Cached validation result : {}", result);
-            // todo throw exception and send it to waiting and retry later
+
+            log.info("Will be retried later, orderId : {}", orderId);
+            UnprocessableMessageHandler unprocessableMessageHandler = getUnprocessableMessageHandler(rejectedOrderExchange);
+            unprocessableMessageHandler.handleErrorProcessingMessage(message, channel, deliveryTag);
+            return;
         }
 
         if (isEverythingOkay(result)) {
+            channel.basicAck(deliveryTag, false);
             log.info("Validated the order, orderId : {}", result.getOrderId());
             // todo redirect it to calculate cost
             log.info("Proceed it to calculate total cost");
@@ -116,7 +136,7 @@ public class OrderServiceImpl implements OrderService {
                         .get(CacheUtil.getCacheKey(CacheUtil.REJECTED_ORDER_CACHE_KEY, orderId))).isPresent();
     }
 
-    private boolean isAnyRejected(ValidationResult result) {
+    private boolean isRejected(ValidationResult result) {
         List<ValidationStatus> rejects = Stream.of(result.getDiscountStatus(), result.getStockStatus())
                 .filter(ValidationStatus.REJECTED::equals)
                 .toList();
@@ -132,6 +152,10 @@ public class OrderServiceImpl implements OrderService {
         if (ValidationStatus.REJECTED.equals(result.getDiscountStatus())) return ValidationType.DISCOUNT_CODE.name();
         else if (ValidationStatus.REJECTED.equals(result.getStockStatus())) return  ValidationType.STOCK.name();
         else return "Unknown Reason";
+    }
+
+    private UnprocessableMessageHandler getUnprocessableMessageHandler(String rejectedOrderExchange) {
+        return new UnprocessableMessageHandler(rejectedOrderExchange);
     }
 }
 

@@ -4,10 +4,16 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.order.management.orderservice.dto.order.OrderMessage;
 import com.order.management.orderservice.dto.order.OrderRequestDto;
 import com.order.management.orderservice.dto.validation.ValidationResultDto;
+import com.rabbitmq.client.Channel;
+import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.support.AmqpHeaders;
+import org.springframework.messaging.handler.annotation.Header;
+
+import java.io.IOException;
 
 public interface OrderService {
     OrderMessage validateOrder(OrderRequestDto orderDto) throws JsonProcessingException;
-    void consumeValidation(ValidationResultDto validationResultDto);
+    void consumeValidation(Message message, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws IOException;
 }
 

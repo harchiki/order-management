@@ -3,12 +3,16 @@ package com.order.management.orderservice.config;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.Declarables;
+import org.springframework.amqp.core.DirectExchange;
 import org.springframework.amqp.core.FanoutExchange;
 import org.springframework.amqp.core.Queue;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 public class RabbitmqSchemaConfig {
@@ -29,14 +33,45 @@ public class RabbitmqSchemaConfig {
 	}
 
 	@Bean
-	Declarables createValidationResponseSchema(@Value("${order.validation.response.queue}") String stockQueueName,
-											   @Value("${order.validation.response.exchange}") String validationExchange) {
-		FanoutExchange fanoutExchange = new FanoutExchange(validationExchange, true,
-				false, null);
+	Declarables createValidationResponseSchema(@Value("${order.validation.response.queue}") String validationResponseQueueName,
+											   @Value("${order.validation.response.exchange}") String validationExchangeName,
+											   @Value("${order.validation.response.wait.exchange}") String dlxWaitExchangeName) {
+		FanoutExchange validationExchange = new FanoutExchange(validationExchangeName, true, false, null);
 
-		Queue stockQueue = new Queue(stockQueueName);
-		Binding stockBinding = BindingBuilder.bind(stockQueue).to(fanoutExchange);
+		Map<String, Object> args = new HashMap<>();
+		args.put("x-dead-letter-exchange", dlxWaitExchangeName);
+		Queue validationResponeQueue = new Queue(validationResponseQueueName, true,false, false, args);
+		Binding binding = BindingBuilder.bind(validationResponeQueue).to(validationExchange);
 
-		return new Declarables(fanoutExchange, stockQueue, stockBinding);
+
+
+		return new Declarables(validationExchange, validationResponeQueue, binding);
+	}
+
+	@Bean
+	Declarables createValidationResponseWaitingSchema(@Value("${order.validation.response.wait.queue}") String waitingQueueName,
+													  @Value("${order.validation.response.wait.exchange}") String waitingExchangeName,
+													  @Value("${order.validation.response.exchange}") String dlxValidationExchangeName) {
+		FanoutExchange waitExchange = new FanoutExchange(waitingExchangeName, true, false, null);
+
+		Map<String, Object> args = new HashMap<>();
+		args.put("x-dead-letter-exchange", dlxValidationExchangeName);
+//		args.put("x-dead-letter-routing-key", "dlxValidationExchangeName");
+		args.put("x-message-ttl", 5000);
+
+		Queue validationResponeQueue = new Queue(waitingQueueName, true,false, false, args);
+		Binding binding = BindingBuilder.bind(validationResponeQueue).to(waitExchange);
+
+
+		return new Declarables(waitExchange, validationResponeQueue, binding);
+	}
+
+	@Bean
+	Declarables createRejectedOrderSchema(@Value("${order.rejected.queue}") String rejectedOrderQueueName,
+										  @Value("${order.validation.response.dlx}") String rejectedExchangeName) {
+		FanoutExchange rejectedExchange = new FanoutExchange(rejectedExchangeName, true, false, null);
+		Queue validationResponeQueue = new Queue(rejectedOrderQueueName);
+		Binding binding = BindingBuilder.bind(validationResponeQueue).to(rejectedExchange);
+		return new Declarables(rejectedExchange, validationResponeQueue, binding);
 	}
 }
