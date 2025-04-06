@@ -17,10 +17,10 @@ import com.order.management.orderservice.model.Order;
 import com.order.management.orderservice.repository.OrderRepository;
 import com.order.management.orderservice.util.CacheUtil;
 import com.rabbitmq.client.Channel;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -33,10 +33,9 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -48,7 +47,7 @@ public class OrderServiceImpl implements OrderService {
     private final OrderRepository orderRepository;
     // key order id
     private final RedisTemplate<String, ValidationResult> validationCacheTemplate;
-    private final RedisTemplate<String, RejectedOrder> rejectedOrderCacheTemplate;
+    private UnprocessableMessageHandler unprocessableMessageHandler;
 
     @Value("${order.validation.response.dlx}")
     private String rejectedOrderExchange;
@@ -56,8 +55,13 @@ public class OrderServiceImpl implements OrderService {
     @Value("${order.validation.exchange}")
     private String orderValidationExchange;
 
+    @PostConstruct
+    private void postConstruct() {
+        unprocessableMessageHandler = new UnprocessableMessageHandler(rejectedOrderExchange);
+    }
+
     @Override
-    public OrderMessage validateOrder(OrderRequestDto orderDto) throws JsonProcessingException {
+    public OrderMessage validateOrder(OrderRequestDto orderDto) {
         Order order = new Order();
         orderMapper.orderRequestDtoToOrder(order, orderDto);
         order.setStatus(OrderStatus.CREATED);
@@ -72,23 +76,63 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public void consumeValidation(Message message, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws IOException {
         ValidationResultDto validationResultDto = objectMapper.readValue(message.getBody(), ValidationResultDto.class);
-
         log.info("Consuming validation result : {}", validationResultDto);
-        UUID orderId = validationResultDto.getOrderId();
+
+        final UUID orderId = validationResultDto.getOrderId();
         final String validationCacheKey = CacheUtil.getCacheKey(CacheUtil.VALIDATION_CACHE_ORDER_KEY, orderId);
-        // check whether the order is already rejected from cache
-        boolean isAlreadyRejected = isAlreadyRejected(orderId);
-
-        if (isAlreadyRejected) {
-            log.debug("Order is already rejected, orderId : {}", orderId);
-            channel.basicAck(deliveryTag, false);
-            return;
-        }
-
         // check if any validation record exists in cache
         ValidationResult result = Optional.ofNullable(validationCacheTemplate.opsForValue().get(validationCacheKey))
                 .orElse(new ValidationResult(orderId));
 
+        if (result.isRejected()) {
+            // check whether the order is already rejected from cache
+            log.info("Order is already rejected, orderId : {}", orderId);
+            channel.basicAck(deliveryTag, false);
+        } else if (isRejected(result)) {
+            // check if order will be rejected
+            log.info("Order is rejected, orderId : [{}]", result);
+            RejectedOrder rejectedOrder = new RejectedOrder(orderId, getRejectionReason(result));
+            rabbitTemplate.convertAndSend(rejectedOrderExchange, "", rejectedOrder);
+
+            // set isRejected = true and cache it, in case other validation message
+            result.setRejected(true);
+            validationCacheTemplate.opsForValue().set(validationCacheKey, result, Duration.ofMinutes(1));
+            channel.basicAck(deliveryTag, false);
+
+        } else if (isReadyToProceed(result) && !result.isProceeded()) {
+            // ready to be proceeded
+            log.info("Validated the order, orderId : {}", result.getOrderId());
+
+            // todo redirect it to calculate cost
+            // rabbitTemplate.convertAndSend();
+            log.info("Proceeded it to calculate total cost, orderId : {}", result.getOrderId());
+
+            // set isProceeded = true and cache it, in case other validation message
+            result.setProceeded(true);
+            validationCacheTemplate.opsForValue().set(validationCacheKey, result, Duration.ofMinutes(1));
+            channel.basicAck(deliveryTag, false);
+        } else {
+            // map new results to ValidationResult from dto
+            mapResultDtoToResult(validationResultDto, result);
+
+            if (!isReadyToProceed(result) && !result.isRejected()) {
+                validationCacheTemplate.opsForValue().set(validationCacheKey, result, Duration.ofMinutes(1));
+                log.info("Cached validation result : {}", result);
+
+                unprocessableMessageHandler.handleErrorProcessingMessage(message, channel, deliveryTag);
+            } else if (result.isRejected()) {
+                // check whether the order is already rejected from cache
+                log.info("Order is already rejected, orderId : {}", orderId);
+                channel.basicAck(deliveryTag, false);
+            } else {
+                log.info("Ready to proceed, it will be proceeded as soon, orderId : {}", orderId);
+                validationCacheTemplate.opsForValue().set(validationCacheKey, result, Duration.ofMinutes(1));
+                channel.basicAck(deliveryTag, false);
+            }
+        }
+    }
+
+    private void mapResultDtoToResult(ValidationResultDto validationResultDto, ValidationResult result) {
         // map stock status if exists
         Optional.ofNullable(validationResultDto.getStockStatus())
                 .ifPresent(result::setStockStatus);
@@ -96,59 +140,14 @@ public class OrderServiceImpl implements OrderService {
         // map discount status if exists
         Optional.ofNullable(validationResultDto.getDiscountStatus())
                 .ifPresent(result::setDiscountStatus);
-
-        // check results if any rejected
-        if (isRejected(result)) {
-            log.info("Order is just rejected, orderId : [{}]", result);
-            RejectedOrder rejectedOrder = new RejectedOrder(orderId, getRejectionReason(result));
-            rejectedOrderCacheTemplate.opsForValue()
-                    .set(CacheUtil.getCacheKey(CacheUtil.REJECTED_ORDER_CACHE_KEY, orderId), rejectedOrder, Duration.ofMinutes(1));
-            channel.basicAck(deliveryTag, false);
-            rabbitTemplate.convertAndSend(rejectedOrderExchange, "",rejectedOrder);
-            return;
-        }
-
-        // todo it need to be solved
-        // even if consumed validation successfully,
-        // however previous message is still left in waiting queue
-        // and it s still going into rejected queue
-        // maybe a flag for waiting would be easy solution
-        if (Optional.ofNullable(result.getDiscountStatus()).isEmpty()
-                || Optional.ofNullable(result.getStockStatus()).isEmpty()) {
-            validationCacheTemplate.opsForValue().set(validationCacheKey, result, Duration.ofMinutes(1));
-            log.info("Cached validation result : {}", result);
-
-            log.info("Will be retried later, orderId : {}", orderId);
-            UnprocessableMessageHandler unprocessableMessageHandler = getUnprocessableMessageHandler(rejectedOrderExchange);
-            unprocessableMessageHandler.handleErrorProcessingMessage(message, channel, deliveryTag);
-            return;
-        }
-
-        if (isEverythingOkay(result)) {
-            channel.basicAck(deliveryTag, false);
-            log.info("Validated the order, orderId : {}", result.getOrderId());
-            // todo redirect it to calculate cost
-            log.info("Proceed it to calculate total cost");
-            // rabbitTemplate.convertAndSend();
-
-            validationCacheTemplate.delete(validationCacheKey);
-            log.info("Removed order from validation cache, orderId : {}", result.getOrderId());
-        }
-    }
-
-    private boolean isAlreadyRejected(UUID orderId) {
-        return Optional.ofNullable(rejectedOrderCacheTemplate.opsForValue()
-                        .get(CacheUtil.getCacheKey(CacheUtil.REJECTED_ORDER_CACHE_KEY, orderId))).isPresent();
     }
 
     private boolean isRejected(ValidationResult result) {
-        List<ValidationStatus> rejects = Stream.of(result.getDiscountStatus(), result.getStockStatus())
-                .filter(ValidationStatus.REJECTED::equals)
-                .toList();
-        return CollectionUtils.isNotEmpty(rejects);
+        return Arrays.asList(result.getDiscountStatus(), result.getStockStatus())
+                .contains(ValidationStatus.REJECTED);
     }
 
-    private boolean isEverythingOkay(ValidationResult result) {
+    private boolean isReadyToProceed(ValidationResult result) {
         return ValidationStatus.OKAY.equals(result.getStockStatus())
                 && ValidationStatus.OKAY.equals(result.getDiscountStatus());
     }
@@ -157,10 +156,6 @@ public class OrderServiceImpl implements OrderService {
         if (ValidationStatus.REJECTED.equals(result.getDiscountStatus())) return ValidationType.DISCOUNT_CODE.name();
         else if (ValidationStatus.REJECTED.equals(result.getStockStatus())) return  ValidationType.STOCK.name();
         else return "Unknown Reason";
-    }
-
-    private UnprocessableMessageHandler getUnprocessableMessageHandler(String rejectedOrderExchange) {
-        return new UnprocessableMessageHandler(rejectedOrderExchange);
     }
 }
 

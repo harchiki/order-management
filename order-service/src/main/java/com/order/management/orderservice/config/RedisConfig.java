@@ -17,12 +17,4 @@ public class RedisConfig {
         template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
         return template;
     }
-
-    @Bean
-    public RedisTemplate<String, RejectedOrder> getRejectedOrderCacheTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, RejectedOrder> template = new RedisTemplate<>();
-        template.setConnectionFactory(connectionFactory);
-        template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
-        return template;
-    }
 }

@@ -16,6 +16,8 @@ public class ValidationResult {
     private UUID orderId;
     private ValidationStatus stockStatus;
     private ValidationStatus discountStatus;
+    private boolean isProceeded;
+    private boolean isRejected;
 
     public ValidationResult(UUID orderId) {
         this.orderId = orderId;
