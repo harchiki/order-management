@@ -1,5 +1,6 @@
 package com.order.management.stockservice.service.impl;
 
+import com.order.management.stockservice.constant.ReservationStatus;
 import com.order.management.stockservice.dto.OrderRequestDto;
 import com.order.management.stockservice.dto.ProductRequest;
 import com.order.management.stockservice.model.Product;
@@ -37,6 +38,20 @@ public class ReservationServiceImpl implements ReservationService {
         reservationRepository.saveAll(reservedSet);
     }
 
+    @Override
+    public Set<Reservation> findByOrderId(UUID orderId) {
+        return reservationRepository.findByOrderId(orderId);
+    }
+
+    @Override
+    public void updateReservationsBackToStock(UUID orderId) {
+        Set<Reservation> updatedReservations = reservationRepository.findByOrderId(orderId)
+                .stream()
+                .peek(reservation -> reservation.setStatus(ReservationStatus.BACK_TO_STOCK))
+                .collect(Collectors.toSet());
+        reservationRepository.saveAll(updatedReservations);
+    }
+
     private Optional<Reservation> reserve(UUID orderId, ProductRequest request) {
         Optional<Product> optProduct = productService.findById(request.getProductId());
         if (optProduct.isPresent()) {
@@ -44,6 +59,7 @@ public class ReservationServiceImpl implements ReservationService {
             reservation.setOrderId(orderId);
             reservation.setProduct(optProduct.get());
             reservation.setQuantity(request.getQuantity());
+            reservation.setStatus(ReservationStatus.RESERVED);
             productService.decreaseStock(request);
             return Optional.of(reservation);
         }

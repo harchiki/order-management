@@ -9,6 +9,5 @@ public interface ProductService {
     Optional<Product> findById(Long id);
     void save(Product product);
     void decreaseStock(ProductRequest request);
-
     void increaseStock(ProductRequest request);
 }

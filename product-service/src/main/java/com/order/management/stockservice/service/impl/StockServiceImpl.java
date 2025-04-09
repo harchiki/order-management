@@ -3,11 +3,14 @@ package com.order.management.stockservice.service.impl;
 import com.order.management.common.constant.ValidationStatus;
 import com.order.management.stockservice.dto.OrderRequestDto;
 import com.order.management.stockservice.dto.ProductRequest;
+import com.order.management.stockservice.dto.RejectedOrder;
 import com.order.management.stockservice.dto.StockValidationResult;
 import com.order.management.stockservice.model.Product;
+import com.order.management.stockservice.model.Reservation;
 import com.order.management.stockservice.service.ProductService;
 import com.order.management.stockservice.service.ReservationService;
 import com.order.management.stockservice.service.StockService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -17,6 +20,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -39,6 +43,7 @@ public class StockServiceImpl implements StockService {
 
         ValidationStatus status;
         if (isAllStockEnough) {
+            // reserve items in stock
             reservationService.reserve(order);
             status = ValidationStatus.OKAY;
         } else {
@@ -47,6 +52,24 @@ public class StockServiceImpl implements StockService {
 
         result.setStockStatus(status);
         rabbitTemplate.convertAndSend(validationResponseExchange, "", result);
+    }
+
+    //todo make rejected queue as stream
+    @RabbitListener(queues = "${order.rejected.queue}")
+    @Transactional
+    @Override
+    public void backToStock(RejectedOrder order) {
+        log.info("Consuming Rejected Order, orderId : {}", order.getOrderId());
+        Set<Reservation> reservations = reservationService.findByOrderId(order.getOrderId());
+        reservations.stream()
+                .map(reservation -> {
+                    ProductRequest request = new ProductRequest();
+                    request.setProductId(reservation.getProduct().getProductId());
+                    request.setQuantity(reservation.getQuantity());
+                    return request;
+                })
+                .forEach(productService::increaseStock);
+        reservationService.updateReservationsBackToStock(order.getOrderId());
     }
 
     private boolean isStockEnough(ProductRequest requestDto) {

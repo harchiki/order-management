@@ -44,7 +44,7 @@ public class ProductServiceImpl implements ProductService {
         Optional<Product> optProduct = repository.findById(request.getProductId());
         if (optProduct.isPresent()) {
             Product product = optProduct.get();
-            product.setQuantity(product.getQuantity() - request.getQuantity());
+            product.setQuantity(product.getQuantity() + request.getQuantity());
             repository.save(product);
         }
     }
