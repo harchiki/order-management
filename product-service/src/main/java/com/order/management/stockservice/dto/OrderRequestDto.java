@@ -9,7 +9,7 @@ import java.util.UUID;
 
 @Data
 @NoArgsConstructor
-public class OrderMessage {
+public class OrderRequestDto {
     private UUID orderId;
     private Set<ProductRequest> cart;
     private OrderStatus status;

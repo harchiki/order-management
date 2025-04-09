@@ -1,13 +1,15 @@
 package com.order.management.stockservice.model;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.UUID;
+import java.util.Set;
 
 @NoArgsConstructor
 @Getter
@@ -25,4 +27,7 @@ public class Product {
 
     @Column
     private double price;
+
+    @OneToMany(mappedBy="product", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    private Set<Reservation> reservations;
 }
