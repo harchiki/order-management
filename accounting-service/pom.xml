@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.order.management</groupId>
-	<artifactId>payment-service</artifactId>
+	<artifactId>accounting-service</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>payment-service</name>
 	<description>Process payments of validated orders</description>

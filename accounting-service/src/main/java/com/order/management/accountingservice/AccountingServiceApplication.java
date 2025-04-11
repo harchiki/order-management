@@ -1,13 +1,13 @@
-package com.order.management.paymentservice;
+package com.order.management.accountingservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class PaymentServiceApplication {
+public class AccountingServiceApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(PaymentServiceApplication.class, args);
+		SpringApplication.run(AccountingServiceApplication.class, args);
 	}
 
 }
