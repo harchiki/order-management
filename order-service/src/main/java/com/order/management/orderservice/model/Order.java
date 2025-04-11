@@ -24,7 +24,7 @@ public class Order {
     private UUID id;
 
     @OneToMany(mappedBy="order", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    private Set<RequestItem> cart;
+    private Set<ProductRequest> cart;
 
     @Column
     private String discountCode;

@@ -1,6 +1,5 @@
-package com.order.management.orderservice.service;
+package com.order.management.orderservice.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.order.management.common.constant.OrderStatus;
 import com.order.management.common.constant.ValidationStatus;
@@ -15,6 +14,8 @@ import com.order.management.orderservice.mapper.OrderMapper;
 
 import com.order.management.orderservice.model.Order;
 import com.order.management.orderservice.repository.OrderRepository;
+import com.order.management.orderservice.service.OrderPreprocessService;
+import com.order.management.orderservice.service.OrderService;
 import com.order.management.orderservice.util.CacheUtil;
 import com.rabbitmq.client.Channel;
 import jakarta.annotation.PostConstruct;
@@ -44,7 +45,8 @@ public class OrderServiceImpl implements OrderService {
     private final RabbitTemplate rabbitTemplate;
     private final ObjectMapper objectMapper;
     private final OrderMapper orderMapper;
-    private final OrderRepository orderRepository;
+    private final OrderPreprocessService preprocessService;
+
     // key order id
     private final RedisTemplate<String, ValidationResult> validationCacheTemplate;
     private UnprocessableMessageHandler unprocessableMessageHandler;
@@ -61,16 +63,15 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public OrderMessage validateOrder(OrderRequestDto orderDto) {
-        Order order = new Order();
-        orderMapper.orderRequestDtoToOrder(order, orderDto);
-        order.setStatus(OrderStatus.CREATED);
-        orderRepository.save(order);
+    public OrderMessage preprocessOrderRequest(OrderRequestDto orderDto) {
+        Order order = preprocessService.createOrderRequest(orderDto);
 
         OrderMessage orderMessage = orderMapper.orderToOrderMessage(order);
         rabbitTemplate.convertAndSend(orderValidationExchange, "", orderMessage);
         return orderMessage;
     }
+
+
 
     @RabbitListener(queues = "${order.validation.response.queue}", containerFactory = "customRabbitListener")
     @Override

@@ -14,7 +14,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class RequestItem {
+public class ProductRequest {
     @Id
     @GeneratedValue
     private long id;
