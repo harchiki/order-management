@@ -8,7 +8,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Data
-public class OrderMessage {
+public class OrderRecordDto {
     private UUID orderId;
     private Set<ProductRequestDto> cart;
     private OrderStatus status;

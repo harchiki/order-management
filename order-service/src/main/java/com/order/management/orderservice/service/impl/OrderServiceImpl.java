@@ -1,10 +1,9 @@
 package com.order.management.orderservice.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.order.management.common.constant.OrderStatus;
 import com.order.management.common.constant.ValidationStatus;
 import com.order.management.common.constant.ValidationType;
-import com.order.management.orderservice.dto.order.OrderMessage;
+import com.order.management.orderservice.dto.order.OrderRecordDto;
 import com.order.management.orderservice.dto.order.OrderRequestDto;
 import com.order.management.orderservice.dto.validation.RejectedOrder;
 import com.order.management.orderservice.dto.validation.ValidationResult;
@@ -13,7 +12,6 @@ import com.order.management.orderservice.helper.rabbitmq.UnprocessableMessageHan
 import com.order.management.orderservice.mapper.OrderMapper;
 
 import com.order.management.orderservice.model.Order;
-import com.order.management.orderservice.repository.OrderRepository;
 import com.order.management.orderservice.service.OrderPreprocessService;
 import com.order.management.orderservice.service.OrderService;
 import com.order.management.orderservice.util.CacheUtil;
@@ -63,12 +61,12 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public OrderMessage preprocessOrderRequest(OrderRequestDto orderDto) {
+    public OrderRecordDto preprocessOrderRequest(OrderRequestDto orderDto) {
         Order order = preprocessService.createOrderRequest(orderDto);
 
-        OrderMessage orderMessage = orderMapper.orderToOrderMessage(order);
-        rabbitTemplate.convertAndSend(orderValidationExchange, "", orderMessage);
-        return orderMessage;
+        OrderRecordDto orderRecordDto = orderMapper.orderToOrderMessage(order);
+        rabbitTemplate.convertAndSend(orderValidationExchange, "", orderRecordDto);
+        return orderRecordDto;
     }
 
 

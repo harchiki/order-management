@@ -1,6 +1,6 @@
 package com.order.management.orderservice.mapper;
 
-import com.order.management.orderservice.dto.order.OrderMessage;
+import com.order.management.orderservice.dto.order.OrderRecordDto;
 import com.order.management.orderservice.dto.order.OrderRequestDto;
 import com.order.management.orderservice.dto.product.ProductRequestDto;
 import com.order.management.orderservice.model.ProductRequest;
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 @Mapper(componentModel = "spring")
 public interface OrderMapper {
     @Mapping(target = "orderId", expression = "java(order.getId())")
-    OrderMessage orderToOrderMessage(Order order);
+    OrderRecordDto orderToOrderMessage(Order order);
 
     @Mapping(target = "cart", expression = "java(productRequestDtoToRequestItem(order, orderRequestDto))")
     void orderRequestDtoToOrder(@MappingTarget Order order, OrderRequestDto orderRequestDto);

@@ -1,7 +1,7 @@
 package com.order.management.orderservice.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.order.management.orderservice.dto.order.OrderMessage;
+import com.order.management.orderservice.dto.order.OrderRecordDto;
 import com.order.management.orderservice.dto.order.OrderRequestDto;
 import com.order.management.orderservice.service.OrderService;
 import lombok.RequiredArgsConstructor;
@@ -19,8 +19,8 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping("/payment")
-    public ResponseEntity<OrderMessage> paymentProcess(@RequestBody OrderRequestDto orderRequestDto) throws JsonProcessingException {
-        OrderMessage orderMessage = orderService.preprocessOrderRequest(orderRequestDto);
-        return ResponseEntity.ok(orderMessage);
+    public ResponseEntity<OrderRecordDto> paymentProcess(@RequestBody OrderRequestDto orderRequestDto) throws JsonProcessingException {
+        OrderRecordDto orderRecordDto = orderService.preprocessOrderRequest(orderRequestDto);
+        return ResponseEntity.ok(orderRecordDto);
     }
 }
