@@ -1,6 +1,8 @@
 package com.order.management.productservice.service.impl;
 
+import com.order.management.productservice.dto.ProductPriceDto;
 import com.order.management.productservice.dto.ProductRequest;
+import com.order.management.productservice.mapper.ProductMapper;
 import com.order.management.productservice.model.Product;
 import com.order.management.productservice.repository.ProductRepository;
 import com.order.management.productservice.service.ProductService;
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor(onConstructor_ = @__(@Autowired))
 public class ProductServiceImpl implements ProductService {
     private final ProductRepository repository;
+    private final ProductMapper productMapper;
 
     @Override
     public Optional<Product> findById(Long id) {
@@ -52,10 +55,8 @@ public class ProductServiceImpl implements ProductService {
         }
     }
 
-    public void getPriceList(List<ProductRequest> productList) {
-        Set<Long> ids = productList.stream()
-                .map(ProductRequest::getProductId)
-                .collect(Collectors.toSet());
+    public List<ProductPriceDto> getPriceList(List<Long> ids) {
         List<Product> products = repository.findAllById(ids);
+        return productMapper.productToProductPriceDto(products);
     }
 }
