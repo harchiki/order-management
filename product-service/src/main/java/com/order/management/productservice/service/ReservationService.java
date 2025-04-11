@@ -1,7 +1,7 @@
-package com.order.management.stockservice.service;
+package com.order.management.productservice.service;
 
-import com.order.management.stockservice.dto.OrderRequestDto;
-import com.order.management.stockservice.model.Reservation;
+import com.order.management.productservice.dto.OrderRequestDto;
+import com.order.management.productservice.model.Reservation;
 
 import java.util.Set;
 import java.util.UUID;

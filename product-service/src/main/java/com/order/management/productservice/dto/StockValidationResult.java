@@ -1,4 +1,4 @@
-package com.order.management.stockservice.dto;
+package com.order.management.productservice.dto;
 
 import com.order.management.common.constant.ValidationStatus;
 

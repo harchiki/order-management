@@ -1,6 +1,6 @@
-package com.order.management.stockservice.model;
+package com.order.management.productservice.model;
 
-import com.order.management.stockservice.constant.ReservationStatus;
+import com.order.management.productservice.constant.ReservationStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

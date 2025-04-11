@@ -1,15 +1,15 @@
-package com.order.management.stockservice.service.impl;
+package com.order.management.productservice.service.impl;
 
 import com.order.management.common.constant.ValidationStatus;
-import com.order.management.stockservice.dto.OrderRequestDto;
-import com.order.management.stockservice.dto.ProductRequest;
-import com.order.management.stockservice.dto.RejectedOrder;
-import com.order.management.stockservice.dto.StockValidationResult;
-import com.order.management.stockservice.model.Product;
-import com.order.management.stockservice.model.Reservation;
-import com.order.management.stockservice.service.ProductService;
-import com.order.management.stockservice.service.ReservationService;
-import com.order.management.stockservice.service.StockService;
+import com.order.management.productservice.dto.OrderRequestDto;
+import com.order.management.productservice.dto.ProductRequest;
+import com.order.management.productservice.dto.RejectedOrder;
+import com.order.management.productservice.dto.StockValidationResult;
+import com.order.management.productservice.model.Product;
+import com.order.management.productservice.model.Reservation;
+import com.order.management.productservice.service.ProductService;
+import com.order.management.productservice.service.ReservationService;
+import com.order.management.productservice.service.StockService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

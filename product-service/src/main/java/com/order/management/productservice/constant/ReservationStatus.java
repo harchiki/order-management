@@ -1,4 +1,4 @@
-package com.order.management.stockservice.constant;
+package com.order.management.productservice.constant;
 
 public enum ReservationStatus {
     RESERVED,

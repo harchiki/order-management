@@ -1,4 +1,4 @@
-package com.order.management.stockservice.model;
+package com.order.management.productservice.model;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;

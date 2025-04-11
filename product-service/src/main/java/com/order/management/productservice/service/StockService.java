@@ -1,7 +1,7 @@
-package com.order.management.stockservice.service;
+package com.order.management.productservice.service;
 
-import com.order.management.stockservice.dto.OrderRequestDto;
-import com.order.management.stockservice.dto.RejectedOrder;
+import com.order.management.productservice.dto.OrderRequestDto;
+import com.order.management.productservice.dto.RejectedOrder;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 
 public interface StockService {

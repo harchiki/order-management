@@ -1,6 +1,6 @@
-package com.order.management.stockservice.repository;
+package com.order.management.productservice.repository;
 
-import com.order.management.stockservice.model.Product;
+import com.order.management.productservice.model.Product;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ProductRepository extends JpaRepository<Product, Long> {

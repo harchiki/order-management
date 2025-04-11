@@ -1,7 +1,7 @@
-package com.order.management.stockservice.service;
+package com.order.management.productservice.service;
 
-import com.order.management.stockservice.dto.ProductRequest;
-import com.order.management.stockservice.model.Product;
+import com.order.management.productservice.dto.ProductRequest;
+import com.order.management.productservice.model.Product;
 
 import java.util.Optional;
 
