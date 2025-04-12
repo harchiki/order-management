@@ -2,7 +2,7 @@ package com.order.management.accountingservice.service.impl;
 
 import com.order.management.accountingservice.dto.OrderPrice;
 import com.order.management.accountingservice.dto.OrderRecordDto;
-import com.order.management.accountingservice.dto.ProductPriceDto;
+import com.order.management.accountingservice.service.external.dto.ProductPriceDto;
 import com.order.management.accountingservice.dto.ProductRequestDto;
 import com.order.management.accountingservice.dto.ProductTotalPriceDto;
 import com.order.management.accountingservice.mapper.OrderPriceMapper;

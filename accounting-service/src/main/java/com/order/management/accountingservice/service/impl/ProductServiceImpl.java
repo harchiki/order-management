@@ -1,6 +1,6 @@
 package com.order.management.accountingservice.service.impl;
 
-import com.order.management.accountingservice.dto.ProductPriceDto;
+import com.order.management.accountingservice.service.external.dto.ProductPriceDto;
 import com.order.management.accountingservice.service.ProductService;
 import com.order.management.accountingservice.service.external.ProductClient;
 import lombok.RequiredArgsConstructor;

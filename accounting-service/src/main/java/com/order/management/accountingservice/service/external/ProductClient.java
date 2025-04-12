@@ -1,6 +1,6 @@
 package com.order.management.accountingservice.service.external;
 
-import com.order.management.accountingservice.dto.ProductPriceDto;
+import com.order.management.accountingservice.service.external.dto.ProductPriceDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;

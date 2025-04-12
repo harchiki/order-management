@@ -1,4 +1,4 @@
-package com.order.management.accountingservice.dto;
+package com.order.management.accountingservice.service.external.dto;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
