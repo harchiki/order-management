@@ -24,6 +24,8 @@ public class Order {
     @Id
     private UUID id;
 
+    // Added fetch EAGER on cart for simplicity due to lazy loading issue in generated code by mapstruct
+    // todo reconsider the solution in future
     @OneToMany(mappedBy="order", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.EAGER)
     private Set<ProductRequest> cart;
 
