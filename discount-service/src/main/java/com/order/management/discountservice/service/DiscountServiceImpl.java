@@ -1,7 +1,7 @@
 package com.order.management.discountservice.service;
 
 import com.order.management.common.constant.ValidationStatus;
-import com.order.management.common.constant.ValidationType;
+import com.order.management.discountservice.dto.DiscountResponseDto;
 import com.order.management.discountservice.dto.DiscountValidationResult;
 import com.order.management.discountservice.dto.OrderMessage;
 
@@ -21,7 +21,7 @@ import java.util.Optional;
 @Slf4j
 @Service
 @RequiredArgsConstructor(onConstructor_ = @__(@Autowired))
-public class DiscountValidationServiceImpl implements DiscountValidationService{
+public class DiscountServiceImpl implements DiscountService {
     private final RabbitTemplate rabbitTemplate;
 
     @Value("${order.validation.response.exchange}")
@@ -39,6 +39,17 @@ public class DiscountValidationServiceImpl implements DiscountValidationService{
         result.setDiscountStatus(status);
 
         rabbitTemplate.convertAndSend(validationResponseExchange, "", result);
+    }
+
+    @Override
+    public DiscountResponseDto getDiscount(String discountCode) {
+        DiscountCode discount = DiscountCode.findByDiscountCode(discountCode)
+                .orElse(DiscountCode.NO_DISCOUNT);
+
+        DiscountResponseDto responseDto = new DiscountResponseDto();
+        responseDto.setDiscountCode(discount.getDiscountCode());
+        responseDto.setDiscountAmount(discount.getDiscount());
+        return responseDto;
     }
 
     private ValidationStatus verifyDiscountIfExist(String discountCode) {
