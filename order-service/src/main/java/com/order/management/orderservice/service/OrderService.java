@@ -1,17 +1,16 @@
 package com.order.management.orderservice.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.order.management.common.constant.OrderStatus;
 import com.order.management.orderservice.dto.order.OrderRecordDto;
 import com.order.management.orderservice.dto.order.OrderRequestDto;
-import com.rabbitmq.client.Channel;
-import org.springframework.amqp.core.Message;
-import org.springframework.amqp.support.AmqpHeaders;
-import org.springframework.messaging.handler.annotation.Header;
+import com.order.management.orderservice.model.Order;
 
-import java.io.IOException;
+import java.util.UUID;
 
 public interface OrderService {
-    OrderRecordDto preprocessOrderRequest(OrderRequestDto orderDto) throws JsonProcessingException;
-    void consumeValidation(Message message, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws IOException;
-}
+    Order createOrderRequest(OrderRequestDto orderDto);
 
+    OrderRecordDto getOrder(UUID orderId);
+
+    void updateOrderStatus(UUID orderId, OrderStatus status);
+}
