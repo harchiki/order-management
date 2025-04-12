@@ -14,6 +14,7 @@ import com.order.management.accountingservice.service.AccountingService;
 import com.order.management.accountingservice.service.ProductService;
 import com.order.management.common.constant.OrderStatus;
 import lombok.RequiredArgsConstructor;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +30,7 @@ public class AccountingServiceImpl implements AccountingService {
 
 
     @Override
+    @RabbitListener(queues = "${order.accounting.price.queue}")
     public void calculateCost(OrderRecordDto orderRecordDto) {
         List<ProductPriceDto> productPriceDtos = getPrices(orderRecordDto);
 
