@@ -6,6 +6,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
@@ -23,13 +24,14 @@ public class Order {
     @Id
     private UUID id;
 
-    @OneToMany(mappedBy="order", cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @OneToMany(mappedBy="order", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.EAGER)
     private Set<ProductRequest> cart;
 
     @Column
     private String discountCode;
 
     @Enumerated(EnumType.STRING)
+    @Column(length = 20)
     private OrderStatus status;
 
     @Column
