@@ -26,19 +26,19 @@ Current exhanges and queues:
 
 | Exchange Name              | Type   | Queue Name                  | Publisher Service | Consumer Service   | Routing Key        | Purpose                                      |
 |----------------------------|--------|-----------------------------|-------------------|--------------------|--------------------|----------------------------------------------|
-|x.order.validation          | Fanout | q.stock.validation.stock    | order-service	    | product-service    | -                  | Publishes order stock validation request     |
-|x.order.validation          | Fanout | q.stock.validation.discount | order-service     | discount-service   | -                  | Publishes discount validation request        |
-|x.validation.response       | Fanout | q.validation.response       | order-service	    | accounting-service | -                  | Publishes combined validation results        |
-|x.validation.response.wait  | Fanout | q.validation.response.wait  | - 			       | order-service      | -                  | Retry queue for delayed validation responses |
-|dlx.validation.response     | DLX    | q.order.rejected            | - 			       | not determined     | -                  | Dead-letter queue for failed validations     |
-|x.accounting.price          | Direct | q.accounting.price          | -			          | not determined     | q.accounting.price | Publishes validated order to be priced       |
+|x.order.validation          | Fanout | q.stock.validation.stock    | order-service	    | product-service    | N/A                | Publishes order stock validation request     |
+|x.order.validation          | Fanout | q.stock.validation.discount | order-service     | discount-service   | N/A                | Publishes discount validation request        |
+|x.validation.response       | Fanout | q.validation.response       | order-service	    | accounting-service | N/A                | Publishes combined validation results        |
+|x.validation.response.wait  | Fanout | q.validation.response.wait  | N/A 			       | order-service      | N/A                | Retry queue for delayed validation responses |
+|dlx.validation.response     | DLX    | q.order.rejected            | N/A 			       | not determined     | N/A                | Dead-letter queue for failed validations     |
+|x.accounting.price          | Direct | q.accounting.price          | N/A			       | not determined     | q.accounting.price | Publishes validated order to be priced       |
 
 📝 Notes :
 - x.validation.response.wait is the dead-letter exchange (DLX) target of q.validation.response. When the retry count is exceeded, messages are forwarded to q.order.rejected via the dlx.validation.response.
 
 ## 🔄 Workflow
 ### 1. Order Acceptance 
-Accepts an Order by order-service via Rest API. the Order Request includes a discount code (optional) and a cart with one or more items (product IDs and requested quantities)
+The order-service accepts an order via REST API. the Order Request includes a discount code (optional) and a cart with one or more items (product IDs and requested quantities)
    - The discount code is sent to the discount-service for validation.
    - The cart is sent to the product-service to check product stock availability.
      
@@ -49,10 +49,10 @@ discount-service and product-service validates the order and both services retur
    - The product-service validates the stock availability.
      
 ### 3. Validation Handling 
-order-service collects validation results forwards the order record to accounting-service if validations are succeed
+order-service collects validation results forwards the order record to accounting-service if validations succeed
    - Collects both validation responses using the Order ID as a correlation key.
    - Validation results are temporarily stored in an in-memory cache until both are received.
-   - If both discount and stock validation are succeed, forwards the order record to accounting-service in order to determine and calculate prices ant total cost.
+   - If both discount and stock validation succeed, forwards the order record to accounting-service in order to determine and calculate prices ant total cost.
    - If either validation fails, the order is rejected immediately.
      
 ### 4. Accounting and Pricing
