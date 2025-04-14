@@ -14,12 +14,14 @@ import com.order.management.accountingservice.service.AccountingService;
 import com.order.management.accountingservice.service.ProductService;
 import com.order.management.common.constant.OrderStatus;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class AccountingServiceImpl implements AccountingService {
@@ -50,13 +52,14 @@ public class AccountingServiceImpl implements AccountingService {
         orderPrice.setDiscount(discount.getDiscountAmount());
 
         // calculate order total prices
-        orderPrice.setTotalRawPrice(orderPrice.getCart().stream().mapToDouble(ProductTotalPriceDto::getPrice).sum());
+        orderPrice.setTotalRawPrice(orderPrice.getCart().stream().mapToDouble(ProductTotalPriceDto::getTotalPrice).sum());
         orderPrice.setTotalPrice(orderPrice.getTotalRawPrice() - orderPrice.getDiscount());
 
         // set status as priced
         orderPrice.setStatus(OrderStatus.PRICED);
 
         // todo send it payment queue
+        log.info("Order Prices are calculated, [{}]", orderPrice);
     }
 
     private void setProductPriceAndTotal(ProductTotalPriceDto totalPriceDto, List<ProductPriceDto> productPriceDtos) {
@@ -65,7 +68,7 @@ public class AccountingServiceImpl implements AccountingService {
                 .findFirst()
                 .ifPresent(priceDto -> {
                     totalPriceDto.setPrice(priceDto.getPrice());
-                    totalPriceDto.setTotalPrice(priceDto.getPrice() * totalPriceDto.getTotalPrice());
+                    totalPriceDto.setTotalPrice(totalPriceDto.getPrice() * totalPriceDto.getQuantity());
                 });
     }
 
