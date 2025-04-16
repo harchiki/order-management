@@ -1,6 +1,7 @@
 package com.order.management.orderservice.dto.order;
 
 import com.order.management.common.constant.OrderStatus;
+import com.order.management.common.constant.PaymentType;
 import com.order.management.orderservice.dto.product.ProductRequestDto;
 import lombok.Data;
 
@@ -13,4 +14,5 @@ public class OrderRecordDto {
     private Set<ProductRequestDto> cart;
     private OrderStatus status;
     private String discountCode;
+    private PaymentType paymentType;
 }

@@ -1,6 +1,7 @@
 package com.order.management.orderservice.model;
 
 import com.order.management.common.constant.OrderStatus;
+import com.order.management.common.constant.PaymentType;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -35,6 +36,10 @@ public class Order {
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private OrderStatus status;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private PaymentType paymentType;
 
     @Column
     private double totalPrice;
