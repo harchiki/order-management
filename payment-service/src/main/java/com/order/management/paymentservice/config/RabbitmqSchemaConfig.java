@@ -19,23 +19,27 @@ import static com.order.management.common.constant.PaymentType.CREDIT_CARD;
 @Configuration
 public class RabbitmqSchemaConfig {
 	@Bean
-	Declarables createValidationSchema(@Value("${order.payment.queue}") String paymentQueueName,
+	Declarables createValidationSchema(@Value("${order.payment.credit-card.queue}") String paymentCreditCardQueueName,
+									   @Value("${order.payment.bank-transfer.queue}") String paymentBankTransferQueueName,
+									   @Value("${order.payment.wallet.queue}") String paymentWalletQueueName,
 									   @Value("${order.payment.exchange}") String paymentExchangeName) {
 		TopicExchange topicExchange = new TopicExchange(paymentExchangeName, true,
 				false, null);
 
-		Queue queue = new Queue(paymentQueueName);
-
-		Binding bindingCreditCard = BindingBuilder.bind(queue).to(topicExchange)
+		Queue queueCreditCard = new Queue(paymentCreditCardQueueName);
+		Binding bindingCreditCard = BindingBuilder.bind(queueCreditCard).to(topicExchange)
 				.with(CREDIT_CARD.getKey());
 
-		Binding bindingBankTransfer = BindingBuilder.bind(queue).to(topicExchange)
+		Queue queueBankTransfer = new Queue(paymentBankTransferQueueName);
+		Binding bindingBankTransfer = BindingBuilder.bind(queueBankTransfer).to(topicExchange)
 				.with(BANK_TRANSFER.getKey());
 
-		Binding bindingWallets = BindingBuilder.bind(queue).to(topicExchange)
+		Queue queueWallet = new Queue(paymentWalletQueueName);
+		Binding bindingWallets = BindingBuilder.bind(queueWallet).to(topicExchange)
 				.with("payment.wallet.*");
 
 
-		return new Declarables(topicExchange, queue, bindingCreditCard, bindingBankTransfer, bindingWallets);
+		return new Declarables(topicExchange, queueCreditCard, queueBankTransfer, queueWallet,
+				bindingCreditCard, bindingBankTransfer, bindingWallets);
 	}
 }
