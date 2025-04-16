@@ -2,6 +2,7 @@ package com.order.management.accountingservice.dto;
 
 import com.order.management.common.constant.OrderStatus;
 
+import com.order.management.common.constant.PaymentType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -17,4 +18,5 @@ public class OrderRecordDto {
     private List<ProductRequestDto> cart;
     private OrderStatus status;
     private String discountCode;
+    private PaymentType paymentType;
 }
