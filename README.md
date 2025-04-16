@@ -24,14 +24,17 @@ A common module is used to gather shared tools such as Lombok, MapStruct, Jackso
 ## 📬 RabbitMQ Schema 
 Current exhanges and queues:
 
-| Exchange Name              | Type   | Queue Name                  | Publisher Service | Consumer Service   | Routing Key        | Purpose                                      |
-|----------------------------|--------|-----------------------------|-------------------|--------------------|--------------------|----------------------------------------------|
-|x.order.validation          | Fanout | q.stock.validation.stock    | order-service	    | product-service    | N/A                | Publishes order stock validation request     |
-|x.order.validation          | Fanout | q.stock.validation.discount | order-service     | discount-service   | N/A                | Publishes discount validation request        |
-|x.validation.response       | Fanout | q.validation.response       | order-service	    | accounting-service | N/A                | Publishes combined validation results        |
-|x.validation.response.wait  | Fanout | q.validation.response.wait  | N/A 			       | order-service      | N/A                | Retry queue for delayed validation responses |
-|dlx.validation.response     | DLX    | q.order.rejected            | N/A 			       | not determined     | N/A                | Dead-letter queue for failed validations     |
-|x.accounting.price          | Direct | q.accounting.price          | N/A			       | not determined     | q.accounting.price | Publishes validated order to be priced       |
+| Exchange Name              | Type   | Queue Name                 | Publisher Service | Consumer Service   | Routing Key           | Purpose                                          |
+|----------------------------|--------|----------------------------|-------------------|--------------------|-----------------------|--------------------------------------------------|
+| x.order.validation         | Fanout | q.stock.validation.stock   | order-service	  | product-service    | N/A                   | Publishes order stock validation request         |
+| x.order.validation         | Fanout | q.stock.validation.discount | order-service     | discount-service   | N/A                   | Publishes discount validation request            |
+| x.validation.response      | Fanout | q.validation.response      | order-service	  | accounting-service | N/A                   | Publishes combined validation results            |
+| x.validation.response.wait | Fanout | q.validation.response.wait | order-service     | order-service      | N/A                   | Retry queue for delayed validation responses     |
+| dlx.validation.response    | DLX    | q.order.rejected           | N/A 			      | not determined     | N/A                   | Dead-letter queue for failed validations         |
+| x.accounting.price         | Direct | q.accounting.price         | N/A			      | not determined     | q.accounting.price    | Publishes validated order to be priced           |
+| x.payment                  | Topic  | q.payment.credit-card      | accounting-service | payment-service    | payment.card          | Publishes priced order to credit card payment    |
+| x.payment                  | Topic  | q.payment.bank-transfer    | accounting-service | payment-service    | payment.bank-transfer | Publishes priced order to bank transfer payment  |
+| x.payment                  | Topic  | q.payment.wallet           | accounting-service | payment-service    | payment.wallet.*      | Publishes priced order to digital wallet payment |
 
 📝 Notes :
 - x.validation.response.wait is the dead-letter exchange (DLX) target of q.validation.response. When the retry count is exceeded, messages are forwarded to q.order.rejected via the dlx.validation.response.
