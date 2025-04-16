@@ -2,6 +2,7 @@ package com.order.management.accountingservice.service.impl;
 
 import com.order.management.accountingservice.dto.OrderPrice;
 import com.order.management.accountingservice.dto.OrderRecordDto;
+import com.order.management.accountingservice.service.AccountingManagement;
 import com.order.management.accountingservice.service.DiscountService;
 import com.order.management.accountingservice.service.external.DiscountClient;
 import com.order.management.accountingservice.service.external.dto.DiscountResponseDto;
@@ -27,6 +28,7 @@ import java.util.List;
 public class AccountingServiceImpl implements AccountingService {
     private final ProductService productService;
     private final DiscountService discountService;
+    private final AccountingManagement accountingManagement;
     private final ProductPriceMapper productPriceMapper;
     private final OrderPriceMapper orderPriceMapper;
 
@@ -58,8 +60,8 @@ public class AccountingServiceImpl implements AccountingService {
         // set status as priced
         orderPrice.setStatus(OrderStatus.PRICED);
 
-        // todo send it payment queue
         log.info("Order Prices are calculated, [{}]", orderPrice);
+        accountingManagement.sendToPayment(orderPrice);
     }
 
     private void setProductPriceAndTotal(ProductTotalPriceDto totalPriceDto, List<ProductPriceDto> productPriceDtos) {
