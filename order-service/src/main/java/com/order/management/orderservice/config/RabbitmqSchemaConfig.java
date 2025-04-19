@@ -57,7 +57,7 @@ public class RabbitmqSchemaConfig {
 		Map<String, Object> args = new HashMap<>();
 		args.put("x-dead-letter-exchange", dlxValidationExchangeName);
 //		args.put("x-dead-letter-routing-key", "dlxValidationExchangeName");
-		args.put("x-message-ttl", 5000);
+		args.put("x-message-ttl", 1000);
 
 		Queue validationResponeQueue = new Queue(waitingQueueName, true,false, false, args);
 		Binding binding = BindingBuilder.bind(validationResponeQueue).to(waitExchange);
