@@ -79,18 +79,17 @@ public class OrderManagementServiceImpl implements OrderManagementService {
     @RabbitListener(queues = "${order.validation.response.queue}", containerFactory = "customRabbitListener")
     @Override
     public void consumeValidation(Message message, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws IOException {
-        ValidationResultDto validationResultDto = objectMapper.readValue(message.getBody(), ValidationResultDto.class);
-        log.info("Consuming validation result : {}", validationResultDto);
+        ValidationResultDto resultDto = objectMapper.readValue(message.getBody(), ValidationResultDto.class);
+        log.info("Consuming validation result : {}", resultDto);
 
-        final UUID orderId = validationResultDto.getOrderId();
-        final String validationCacheKey = CacheUtil.getCacheKey(CacheUtil.VALIDATION_CACHE_ORDER_KEY, orderId);
         // check if any validation record exists in cache
-        ValidationResult result = Optional.ofNullable(validationCacheTemplate.opsForValue().get(validationCacheKey))
-                .orElse(new ValidationResult(orderId));
+        ValidationResult result = Optional.ofNullable(validationCacheTemplate.opsForValue()
+                        .get(getOrderCacheKey(resultDto.getOrderId())))
+                .orElse(new ValidationResult(resultDto.getOrderId()));
 
         if (result.isRejected()) {
             // check whether the order is already rejected from cache
-            log.info("Order is already rejected, orderId : {}", orderId);
+            log.info("Order is already rejected, orderId : {}", resultDto.getOrderId());
             channel.basicAck(deliveryTag, false);
         } else if (isRejected(result)) {
             rejectOrder(channel, deliveryTag, result);
@@ -98,7 +97,7 @@ public class OrderManagementServiceImpl implements OrderManagementService {
             acceptOrder(channel, deliveryTag, result);
         } else {
             // map new results to ValidationResult from dto
-            updateResults(validationResultDto, result);
+            updateResults(resultDto, result);
 
             retryLater(message, channel, deliveryTag, result);
         }
