@@ -2,6 +2,7 @@ package com.order.management.accountingservice.service.impl;
 
 import com.order.management.accountingservice.dto.OrderPrice;
 import com.order.management.accountingservice.dto.PaymentRequest;
+import com.order.management.accountingservice.mapper.OrderPriceMapper;
 import com.order.management.accountingservice.service.AccountingManagement;
 
 import com.order.management.accountingservice.dto.StatusUpdateDto;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class AccountingManagementImpl implements AccountingManagement {
     private final RabbitTemplate rabbitTemplate;
+    private final OrderPriceMapper mapper;
 
     @Value("${order.payment.exchange}")
     private String paymentExchange;
@@ -36,20 +38,12 @@ public class AccountingManagementImpl implements AccountingManagement {
 
         updateOrderStatus(orderPrice);
 
-        PaymentRequest paymentRequest = new PaymentRequest();
-
-        paymentRequest.setOrderId(orderPrice.getOrderId());
-        paymentRequest.setPaymentType(orderPrice.getPaymentType());
-        paymentRequest.setTotalPrice(orderPrice.getTotalPrice());
-        paymentRequest.setPaymentType(orderPrice.getPaymentType());
-
+        PaymentRequest paymentRequest = mapper.orderPriceToPaymentRequest(orderPrice);
         rabbitTemplate.convertAndSend(paymentExchange, routingKey, paymentRequest);
     }
 
     public void updateOrderStatus(OrderPrice orderPrice) {
-        StatusUpdateDto updateDto = new StatusUpdateDto();
-        updateDto.setOrderId(orderPrice.getOrderId());
-        updateDto.setStatus(orderPrice.getStatus());
+        StatusUpdateDto updateDto = mapper.orderPriceToStatusUpdateDto(orderPrice);
 
         log.info("Order status is updated, orderId : {}, status : {}", updateDto.getOrderId(), updateDto.getStatus());
         rabbitTemplate.convertAndSend(statusExchange, statusKey, updateDto);
