@@ -49,7 +49,7 @@ public class OrderServiceImpl implements OrderService {
             Order order = optOrder.get();
             order.setStatus(status);
             orderRepository.save(order);
-            log.error("Order status is updated with {}, orderId : {}", status.name(), orderId);
+            log.error("Update order status with {}, orderId : {}", status.name(), orderId);
         } else {
             log.error("Order not found, orderId : {}", orderId);
         }

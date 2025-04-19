@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.order.management.common.constant.OrderStatus;
 import com.order.management.common.constant.ValidationStatus;
 import com.order.management.common.constant.ValidationType;
+import com.order.management.orderservice.dto.StatusUpdateDto;
 import com.order.management.orderservice.dto.order.OrderRecordDto;
 import com.order.management.orderservice.dto.order.OrderRequestDto;
 import com.order.management.orderservice.dto.validation.RejectedOrder;
@@ -101,6 +102,12 @@ public class OrderManagementServiceImpl implements OrderManagementService {
 
             retryLater(message, channel, deliveryTag, result);
         }
+    }
+
+    @Override
+    @RabbitListener(queues = "${order.status.queue}")
+    public void validateOrder(StatusUpdateDto updateDto) {
+        orderService.updateOrderStatus(updateDto.getOrderId(), updateDto.getStatus());
     }
 
     private void retryLater(Message message, Channel channel, long deliveryTag, ValidationResult result) throws IOException {
