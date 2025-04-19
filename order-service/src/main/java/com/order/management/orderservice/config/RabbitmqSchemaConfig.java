@@ -74,4 +74,14 @@ public class RabbitmqSchemaConfig {
 		Binding binding = BindingBuilder.bind(validationResponeQueue).to(rejectedExchange);
 		return new Declarables(rejectedExchange, validationResponeQueue, binding);
 	}
+
+	@Bean
+	Declarables createOrderStatusSchema(@Value("${order.status.queue}") String statusQueue,
+									    @Value("${order.status.exchange}") String statusExchange,
+									    @Value("${order.status.key}") String statusKey) {
+		DirectExchange exchange = new DirectExchange(statusExchange, true, false, null);
+		Queue queue = new Queue(statusQueue);
+		Binding binding = BindingBuilder.bind(queue).to(exchange).with(statusKey);
+		return new Declarables(exchange, queue, binding);
+	}
 }
