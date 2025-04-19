@@ -38,6 +38,7 @@ public class AccountingManagementImpl implements AccountingManagement {
 
         PaymentRequest paymentRequest = new PaymentRequest();
 
+        paymentRequest.setOrderId(orderPrice.getOrderId());
         paymentRequest.setPaymentType(orderPrice.getPaymentType());
         paymentRequest.setTotalPrice(orderPrice.getTotalPrice());
         paymentRequest.setPaymentType(orderPrice.getPaymentType());
@@ -51,6 +52,6 @@ public class AccountingManagementImpl implements AccountingManagement {
         updateDto.setStatus(orderPrice.getStatus());
 
         log.info("Order status is updated, orderId : {}, status : {}", updateDto.getOrderId(), updateDto.getStatus());
-        rabbitTemplate.convertAndSend(statusExchange, "", updateDto);
+        rabbitTemplate.convertAndSend(statusExchange, statusKey, updateDto);
     }
 }
