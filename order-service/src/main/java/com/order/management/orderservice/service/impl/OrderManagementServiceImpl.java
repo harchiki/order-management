@@ -13,7 +13,6 @@ import com.order.management.orderservice.helper.rabbitmq.UnprocessableMessageHan
 import com.order.management.orderservice.mapper.OrderMapper;
 
 import com.order.management.orderservice.model.Order;
-import com.order.management.orderservice.model.ProductRequest;
 import com.order.management.orderservice.service.OrderService;
 import com.order.management.orderservice.service.OrderManagementService;
 import com.order.management.orderservice.util.CacheUtil;
@@ -36,7 +35,6 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -78,8 +76,6 @@ public class OrderManagementServiceImpl implements OrderManagementService {
         return orderRecordDto;
     }
 
-
-
     @RabbitListener(queues = "${order.validation.response.queue}", containerFactory = "customRabbitListener")
     @Override
     public void consumeValidation(Message message, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws IOException {
@@ -97,53 +93,68 @@ public class OrderManagementServiceImpl implements OrderManagementService {
             log.info("Order is already rejected, orderId : {}", orderId);
             channel.basicAck(deliveryTag, false);
         } else if (isRejected(result)) {
-            // check if order will be rejected
-            log.info("Order is rejected, orderId : [{}]", result);
-            RejectedOrder rejectedOrder = new RejectedOrder(orderId, getRejectionReason(result));
-            rabbitTemplate.convertAndSend(rejectedOrderExchange, "", rejectedOrder);
-
-            // set isRejected = true and cache it, in case other validation message
-            result.setRejected(true);
-            validationCacheTemplate.opsForValue().set(validationCacheKey, result, Duration.ofMinutes(1));
-            channel.basicAck(deliveryTag, false);
-
+            rejectOrder(channel, deliveryTag, result);
         } else if (isReadyToProceed(result) && !result.isProceeded()) {
-            // ready to be proceeded
-            log.info("Validated the order, orderId : {}", result.getOrderId());
-
-            orderService.updateOrderStatus(result.getOrderId(), OrderStatus.VALIDATED);
-
-            // sent it to price queue in order to determine prices
-            OrderRecordDto order = orderService.getOrder(orderId);
-            rabbitTemplate.convertAndSend(priceExchange, priceQueue, order);
-            log.info("Proceeded it to calculate total cost, orderId : {}", result.getOrderId());
-
-            // set isProceeded = true and cache it, in case other validation message
-            result.setProceeded(true);
-            validationCacheTemplate.opsForValue().set(validationCacheKey, result, Duration.ofMinutes(1));
-            channel.basicAck(deliveryTag, false);
+            acceptOrder(channel, deliveryTag, result);
         } else {
             // map new results to ValidationResult from dto
-            mapResultDtoToResult(validationResultDto, result);
+            updateResults(validationResultDto, result);
 
-            if (!isReadyToProceed(result) && !result.isRejected()) {
-                validationCacheTemplate.opsForValue().set(validationCacheKey, result, Duration.ofMinutes(1));
-                log.info("Cached validation result : {}", result);
-
-                unprocessableMessageHandler.handleErrorProcessingMessage(message, channel, deliveryTag);
-            } else if (result.isRejected()) {
-                // check whether the order is already rejected from cache
-                log.info("Order is already rejected, orderId : {}", orderId);
-                channel.basicAck(deliveryTag, false);
-            } else {
-                log.info("Ready to proceed, it will be proceeded as soon, orderId : {}", orderId);
-                validationCacheTemplate.opsForValue().set(validationCacheKey, result, Duration.ofMinutes(1));
-                channel.basicAck(deliveryTag, false);
-            }
+            retryLater(message, channel, deliveryTag, result);
         }
     }
 
-    private void mapResultDtoToResult(ValidationResultDto validationResultDto, ValidationResult result) {
+    private void retryLater(Message message, Channel channel, long deliveryTag, ValidationResult result) throws IOException {
+        if (!isReadyToProceed(result) && !result.isRejected()) {
+            validationCacheTemplate.opsForValue().set(getOrderCacheKey(result.getOrderId()), result, Duration.ofMinutes(1));
+            log.info("Cached validation result : {}", result);
+
+            unprocessableMessageHandler.handleErrorProcessingMessage(message, channel, deliveryTag);
+        } else if (result.isRejected()) {
+            // check whether the order is already rejected from cache
+            log.info("Order is already rejected, orderId : {}", result.getOrderId());
+            channel.basicAck(deliveryTag, false);
+        } else {
+            log.info("Ready to proceed, it will be proceeded as soon, orderId : {}", result.getOrderId());
+            validationCacheTemplate.opsForValue().set(getOrderCacheKey(result.getOrderId()), result, Duration.ofMinutes(1));
+            channel.basicAck(deliveryTag, false);
+        }
+    }
+
+    private void acceptOrder(Channel channel, long deliveryTag, ValidationResult result) throws IOException {
+        // ready to be proceeded
+        log.info("Validated the order, orderId : {}", result.getOrderId());
+
+        orderService.updateOrderStatus(result.getOrderId(), OrderStatus.VALIDATED);
+
+        // sent it to price queue in order to determine prices
+        OrderRecordDto order = orderService.getOrder(result.getOrderId());
+        rabbitTemplate.convertAndSend(priceExchange, priceQueue, order);
+        log.info("Proceeded it to calculate total cost, orderId : {}", result.getOrderId());
+
+        // set isProceeded = true and cache it, in case other validation message
+        result.setProceeded(true);
+        validationCacheTemplate.opsForValue().set(getOrderCacheKey(result.getOrderId()), result, Duration.ofMinutes(1));
+        channel.basicAck(deliveryTag, false);
+    }
+
+    private void rejectOrder(Channel channel, long deliveryTag, ValidationResult result) throws IOException {
+        // check if order will be rejected
+        log.info("Order is rejected, orderId : [{}]", result);
+        RejectedOrder rejectedOrder = new RejectedOrder(result.getOrderId(), getRejectionReason(result));
+        rabbitTemplate.convertAndSend(rejectedOrderExchange, "", rejectedOrder);
+
+        // set isRejected = true and cache it, in case other validation message
+        result.setRejected(true);
+        validationCacheTemplate.opsForValue().set(getOrderCacheKey(result.getOrderId()), result, Duration.ofMinutes(1));
+        channel.basicAck(deliveryTag, false);
+    }
+
+    private String getOrderCacheKey(UUID orderId) {
+        return CacheUtil.getCacheKey(CacheUtil.VALIDATION_CACHE_ORDER_KEY, orderId);
+    }
+
+    private void updateResults(ValidationResultDto validationResultDto, ValidationResult result) {
         // map stock status if exists
         Optional.ofNullable(validationResultDto.getStockStatus())
                 .ifPresent(result::setStockStatus);
