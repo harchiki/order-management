@@ -12,6 +12,6 @@ import java.io.IOException;
 
 public interface OrderManagementService {
     OrderRecordDto preprocessOrderRequest(OrderRequestDto orderDto) throws JsonProcessingException;
-    void consumeValidation(Message message, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws IOException;
+    void validateOrder(Message message, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws IOException;
 }
 

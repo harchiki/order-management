@@ -78,7 +78,7 @@ public class OrderManagementServiceImpl implements OrderManagementService {
 
     @RabbitListener(queues = "${order.validation.response.queue}", containerFactory = "customRabbitListener")
     @Override
-    public void consumeValidation(Message message, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws IOException {
+    public void validateOrder(Message message, Channel channel, @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag) throws IOException {
         ValidationResultDto resultDto = objectMapper.readValue(message.getBody(), ValidationResultDto.class);
         log.info("Consuming validation result : {}", resultDto);
 
