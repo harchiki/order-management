@@ -62,6 +62,8 @@ public class AccountingServiceImpl implements AccountingService {
 
         log.info("Order Prices are calculated, [{}]", orderPrice);
         accountingManagement.sendToPayment(orderPrice);
+
+        // todo send it to billing
     }
 
     private void setProductPriceAndTotal(ProductTotalPriceDto totalPriceDto, List<ProductPriceDto> productPriceDtos) {

@@ -41,14 +41,15 @@ public class Order {
     @Column(length = 20)
     private PaymentType paymentType;
 
-    @Column
+   //  todo will be removed from here after moving them billing service
+    /*@Column
     private double totalPrice;
 
     @Column
     private double appliedDiscount;
 
     @Column
-    private double paid;
+    private double paid;*/
 
     public Order() {
         this.id = UUID.randomUUID();
